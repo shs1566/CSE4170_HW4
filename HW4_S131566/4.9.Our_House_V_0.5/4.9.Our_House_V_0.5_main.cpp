@@ -6,15 +6,16 @@
 #include <GL/freeglut.h>
 
 #include "Shaders/LoadShaders.h"
-GLuint h_ShaderProgram; // handle to shader program
+GLuint h_ShaderProgram_simple, h_ShaderProgram_PS; // handle to shader program
 GLint loc_ModelViewProjectionMatrix, loc_primitive_color; // indices of uniform variables
+GLint loc_ModelViewProjectionMatrix_PS, loc_ModelViewMatrix_PS, loc_ModelViewMatrixInvTrans_PS; // uniform variable for Phong shading
 
 // include glm/*.hpp only if necessary
 //#include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp> //translate, rotate, scale, lookAt, perspective, etc.
+
 glm::mat4 ModelViewProjectionMatrix;
 glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
-
 
 #define TO_RADIAN 0.01745329252f  
 #define TO_DEGREE 57.295779513f
@@ -23,6 +24,57 @@ glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
 
 float WIN_HEIGHT;
 float WIN_WIDTH;
+
+Light_Parameters world_light;
+
+void set_up_scene_light(void) {
+
+	glm::vec4 position_EC;
+	glm::vec3 direction_EC;
+
+	glUseProgram(h_ShaderProgram_PS);
+
+	world_light.light_on = 1;
+
+	world_light.position[0] = 0.0f; world_light.position[1] = 0.0f; world_light.position[2] = 10000.0f; world_light.position[3] = 1.0f;	// EC
+	world_light.ambient_color[0] = 0.3f; world_light.ambient_color[1] = 0.3f; world_light.ambient_color[2] = 0.3f; world_light.ambient_color[3] = 1.0f;
+	world_light.diffuse_color[0] = 0.7f; world_light.diffuse_color[1] = 0.7f; world_light.diffuse_color[2] = 0.7f; world_light.diffuse_color[3] = 1.0f;
+	world_light.specular_color[0] = 0.7f; world_light.specular_color[1] = 0.7f; world_light.specular_color[2] = 0.7f; world_light.specular_color[3] = 1.0f;
+	world_light.spot_direction[0] = 0.0f; world_light.spot_direction[1] = 0.0f; world_light.spot_direction[2] = -1.0f;
+	world_light.spot_exponent = 0.0f;
+	world_light.spot_cutoff_angle = 180.0f;
+	world_light.light_attenuation_factors[0] = 1.0f; world_light.light_attenuation_factors[1] = 0.0f; world_light.light_attenuation_factors[2] = 0.0f; world_light.light_attenuation_factors[3] = 1.0f;
+
+	position_EC = ViewMatrix * glm::vec4(world_light.position[0], world_light.position[1], world_light.position[2], world_light.position[3]);
+	direction_EC = glm::mat3(ViewMatrix) * glm::vec3(world_light.spot_direction[0], world_light.spot_direction[1], world_light.spot_direction[2]);
+
+	glUniform1i(loc_light[5].light_on, world_light.light_on);
+	glUniform4fv(loc_light[5].position, 1, &position_EC[0]);
+	glUniform4fv(loc_light[5].ambient_color, 1, world_light.ambient_color);
+	glUniform4fv(loc_light[5].diffuse_color, 1, world_light.diffuse_color);
+	glUniform4fv(loc_light[5].specular_color, 1, world_light.specular_color);
+	glUniform3fv(loc_light[5].spot_direction, 1, &direction_EC[0]);
+	glUniform1f(loc_light[5].spot_cutoff_angle, world_light.spot_cutoff_angle);
+	glUniform1f(loc_light[5].spot_exponent, world_light.spot_exponent);
+	glUniform4fv(loc_light[5].light_attenuation_factors, 1, world_light.light_attenuation_factors);
+
+	for (int i = 0; i < NUMBER_OF_LIGHT_SUPPORTED - 1; i++) {
+		position_EC = ViewMatrix * glm::vec4(light[i].position[0], light[i].position[1], light[i].position[2], light[i].position[3]);
+		//glm::vec4 position_EC = glm::vec4(0, 0, -10, 1);
+		glm::vec3 direction_EC = glm::mat3(ViewMatrix) * glm::vec3(light[i].spot_direction[0], light[i].spot_direction[1], light[i].spot_direction[2]);
+
+		glUniform1i(loc_light[i].light_on, light[i].light_on);
+		glUniform4fv(loc_light[i].position, 1, &position_EC[0]);
+		glUniform4fv(loc_light[i].ambient_color, 1, light[i].ambient_color);
+		glUniform4fv(loc_light[i].diffuse_color, 1, light[i].diffuse_color);
+		glUniform4fv(loc_light[i].specular_color, 1, light[i].specular_color);
+		glUniform3fv(loc_light[i].spot_direction, 1, &direction_EC[0]);
+		glUniform1f(loc_light[i].spot_cutoff_angle, light[i].spot_cutoff_angle);
+		glUniform1f(loc_light[i].spot_exponent, light[i].spot_exponent);
+		glUniform4fv(loc_light[i].light_attenuation_factors, 1, light[i].light_attenuation_factors);
+	}
+	glUseProgram(0);
+}
 
 void print_mat4(const char *string, glm::mat4 M) {
 	fprintf(stdout, "\n***** %s ******\n", string);
@@ -63,7 +115,7 @@ void draw_camera(CAMERA camera) {
 
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	 
+
 	CAMERA *temp = selected;
 
 	for (int i = 0; i < 4; i++) {
@@ -94,11 +146,16 @@ void display(void) {
 			break;
 		}
 
+		set_up_scene_light();
+
 		/* Draw world coordinate */
+		glUseProgram(h_ShaderProgram_simple);
 		ModelViewMatrix = glm::scale(ViewMatrix, glm::vec3(WC_AXIS_LENGTH, WC_AXIS_LENGTH, WC_AXIS_LENGTH));
 		ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
 		glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glLineWidth(2.0f);
 		draw_axes();
+		glLineWidth(1.0f);
 
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(car_pos[car_frame].x, car_pos[car_frame].y, car_pos[car_frame].z));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, car_pos[car_frame].w * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -123,6 +180,7 @@ void display(void) {
 		draw_camera(camera_down);
 		draw_camera(camera_side);
 
+		glUseProgram(h_ShaderProgram_PS);
 		draw_static_object(&(static_objects[OBJ_BUILDING]), 0);
 
 		draw_static_object(&(static_objects[OBJ_TABLE]), 0);
@@ -145,14 +203,8 @@ void display(void) {
 		draw_static_object(&(static_objects[OBJ_COW]), 0);
 		draw_static_object(&(static_objects[OBJ_COW]), 1);
 
-		
-
 		draw_animated_tiger();
 		draw_camera(camera_tiger);
-
-		/*ModelMatrix_CAR_BODY = glm::rotate(glm::mat4(1.0f), -rotation_angle_car, glm::vec3(0.0f, 1.0f, 0.0f));
-		ModelMatrix_CAR_BODY = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(20.0f, 4.89f, 0.0f));
-		ModelMatrix_CAR_BODY = glm::rotate(ModelMatrix_CAR_BODY, 90.0f*TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));*/
 	}
 	glutSwapBuffers();
 }
@@ -386,29 +438,71 @@ void register_callbacks(void) {
 }
 
 void prepare_shader_program(void) {
+	char string[256];
+
 	ShaderInfo shader_info[3] = {
 		{ GL_VERTEX_SHADER, "Shaders/simple.vert" },
 		{ GL_FRAGMENT_SHADER, "Shaders/simple.frag" },
 		{ GL_NONE, NULL }
 	};
-	h_ShaderProgram = LoadShaders(shader_info);
-	glUseProgram(h_ShaderProgram);
+	ShaderInfo shader_info_PS[3] = {
+		{ GL_VERTEX_SHADER, "Shaders/Phong.vert" },
+		{ GL_FRAGMENT_SHADER, "Shaders/Phong.frag" },
+		{ GL_NONE, NULL }
+	};
+	h_ShaderProgram_simple = LoadShaders(shader_info);
+	loc_ModelViewProjectionMatrix = glGetUniformLocation(h_ShaderProgram_simple, "u_ModelViewProjectionMatrix");
+	loc_primitive_color = glGetUniformLocation(h_ShaderProgram_simple, "u_primitive_color");
 
-	loc_ModelViewProjectionMatrix = glGetUniformLocation(h_ShaderProgram, "u_ModelViewProjectionMatrix");
-	loc_primitive_color = glGetUniformLocation(h_ShaderProgram, "u_primitive_color");
+	h_ShaderProgram_PS = LoadShaders(shader_info_PS);
+	loc_ModelViewProjectionMatrix_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewProjectionMatrix");
+	loc_ModelViewMatrix_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewMatrix");
+	loc_ModelViewMatrixInvTrans_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewMatrixInvTrans");
+
+	loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_global_ambient_color");
+
+	for (int i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+		sprintf(string, "u_light[%d].light_on", i);
+		loc_light[i].light_on = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].position", i);
+		loc_light[i].position = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].ambient_color", i);
+		loc_light[i].ambient_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].diffuse_color", i);
+		loc_light[i].diffuse_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].specular_color", i);
+		loc_light[i].specular_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].spot_direction", i);
+		loc_light[i].spot_direction = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].spot_exponent", i);
+		loc_light[i].spot_exponent = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].spot_cutoff_angle", i);
+		loc_light[i].spot_cutoff_angle = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].light_attenuation_factors", i);
+		loc_light[i].light_attenuation_factors = glGetUniformLocation(h_ShaderProgram_PS, string);
+	}
+
+	loc_material.ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.ambient_color");
+	loc_material.diffuse_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.diffuse_color");
+	loc_material.specular_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.specular_color");
+	loc_material.emissive_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.emissive_color");
+	loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_PS, "u_material.specular_exponent");
+
+	//glUseProgram(h_ShaderProgram_simple);
+	//glUseProgram(h_ShaderProgram_PS);
 }
 
 void initialize_camera(void) {
 
 	/* World camera */
-	glm::mat4 Matrix = glm::lookAt(glm::vec3(600.0f, 600.0f, 300.0f), glm::vec3(125.0f, 80.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 Matrix = glm::lookAt(glm::vec3(120.0f, 90.0f, 120.0f), glm::vec3(120.0f, 90.0f, 20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	camera_world.uaxis = glm::vec3(Matrix[0].x, Matrix[1].x, Matrix[2].x);
 	camera_world.vaxis = glm::vec3(Matrix[0].y, Matrix[1].y, Matrix[2].y);
 	camera_world.naxis = glm::vec3(Matrix[0].z, Matrix[1].z, Matrix[2].z);
 	camera_world.pos = -(Matrix[3].x*camera_world.uaxis + Matrix[3].y*camera_world.vaxis + Matrix[3].z*camera_world.naxis);
 
 	camera_world.move_status = 0;
-	camera_world.fov_y = 15.0f;
+	camera_world.fov_y = 100.0f;
 	camera_world.aspect_ratio = 1.5f;
 	camera_world.near_clip = 3.0f;
 	camera_world.far_clip = 2000.0f;
@@ -506,12 +600,12 @@ void initialize_camera(void) {
 
 	set_ViewMatrix_from_camera_frame();
 }
-
+ 
 void initialize_OpenGL(void) {
 	glEnable(GL_DEPTH_TEST); // Default state
-	 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glClearColor(0.12f, 0.18f, 0.12f, 1.0f);
+	glEnable(GL_MULTISAMPLE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
 	selected = &camera_world;
 	initialize_camera();
@@ -525,11 +619,12 @@ void prepare_scene(void) {
 	define_static_objects();
 	define_animated_tiger();
 	define_volume();
-
 	prepare_geom_obj2(GEOM_OBJ_ID_CAR_BODY, "Data/car_body_triangles_v.txt", GEOM_OBJ_TYPE_V);
 	prepare_geom_obj2(GEOM_OBJ_ID_CAR_WHEEL, "Data/car_wheel_triangles_v.txt", GEOM_OBJ_TYPE_V);
 	prepare_geom_obj2(GEOM_OBJ_ID_CAR_NUT, "Data/car_nut_triangles_v.txt", GEOM_OBJ_TYPE_V);
 	initialize_car_pos();
+
+	set_up_scene_light();
 }
 
 void initialize_renderer(void) {
