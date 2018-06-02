@@ -1,18 +1,18 @@
 ﻿  4.9.Our_House_V_0.5_main.cpp
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\object_definitions.h(97): warning C4101: 'filename' :참조되지 않은 지역 변수입니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\object_definitions.h(96): warning C4101: 'i' :참조되지 않은 지역 변수입니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\object_definitions.h(258): warning C4305: '=': 'double'에서 'GLfloat'(으)로 잘립니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\object_definitions.h(268): warning C4305: '=': 'double'에서 'GLfloat'(으)로 잘립니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(75): warning C4244: '인수': 'float'에서 'GLsizei'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(75): warning C4244: '인수': 'float'에서 'GLint'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(81): warning C4244: '인수': 'float'에서 'GLsizei'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(81): warning C4244: '인수': 'float'에서 'GLint'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(87): warning C4244: '인수': 'float'에서 'GLsizei'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(87): warning C4244: '인수': 'float'에서 'GLint'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(93): warning C4244: '인수': 'float'에서 'GLsizei'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(93): warning C4244: '인수': 'float'에서 'GLint'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(307): warning C4244: '=': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(308): warning C4244: '=': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(305): warning C4101: 'aspect_ratio' :참조되지 않은 지역 변수입니다.
-c:\users\speech\desktop\hw2_s131566\hw2_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(577): warning C4326: 'main'의 반환 형식이 'int'이어야 하는데 'void'입니다.
-  4.9.Our_House_V_0.5.vcxproj -> C:\Users\speech\Desktop\HW2_S131566\HW2_S131566\x64\Debug\4.9.Our_House_V_0.5.exe
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\object_definitions.h(130): warning C4101: 'filename' :참조되지 않은 지역 변수입니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\object_definitions.h(129): warning C4101: 'i' :참조되지 않은 지역 변수입니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\object_definitions.h(353): warning C4305: '=': 'double'에서 'GLfloat'(으)로 잘립니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\object_definitions.h(363): warning C4305: '=': 'double'에서 'GLfloat'(으)로 잘립니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(127): warning C4244: '인수': 'float'에서 'GLsizei'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(127): warning C4244: '인수': 'float'에서 'GLint'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(133): warning C4244: '인수': 'float'에서 'GLsizei'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(133): warning C4244: '인수': 'float'에서 'GLint'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(139): warning C4244: '인수': 'float'에서 'GLsizei'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(139): warning C4244: '인수': 'float'에서 'GLint'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(145): warning C4244: '인수': 'float'에서 'GLsizei'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(145): warning C4244: '인수': 'float'에서 'GLint'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(359): warning C4244: '=': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(360): warning C4244: '=': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\son\desktop\cse4170_hw4\hw4_s131566\4.9.our_house_v_0.5\4.9.our_house_v_0.5_main.cpp(357): warning C4101: 'aspect_ratio' :참조되지 않은 지역 변수입니다.
+  4.9.Our_House_V_0.5.vcxproj -> C:\Users\SON\Desktop\CSE4170_HW4\HW4_S131566\x64\Debug\4.9.Our_House_V_0.5.exe
+  4.9.Our_House_V_0.5.vcxproj -> C:\Users\SON\Desktop\CSE4170_HW4\HW4_S131566\x64\Debug\4.9.Our_House_V_0.5.pdb (Partial PDB)

@@ -37,5 +37,11 @@
     <None Include="Shaders\simple.vert">
       <Filter>리소스 파일</Filter>
     </None>
+    <None Include="Shaders\Phong.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\Phong.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>

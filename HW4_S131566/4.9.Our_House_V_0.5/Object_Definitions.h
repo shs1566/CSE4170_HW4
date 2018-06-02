@@ -14,7 +14,7 @@ typedef struct _CAMERA {
 
 /* Define for Camera */
 #define CAM_TRANSLATION_SPEED 5.0f
-#define CAM_ROTATION_SPEED 0.5f
+#define CAM_ROTATION_SPEED 1.0f
 #define CAM_ZOOM_SPEED 0.1f
 
 #define CAM_AXIS_LENGTH 10
@@ -31,7 +31,40 @@ typedef struct _material {
 	GLfloat exponent;
 } Material;
 
+typedef struct _Light_Parameters {
+	int light_on;
+	float position[4];
+	float ambient_color[4], diffuse_color[4], specular_color[4];
+	float spot_direction[3];
+	float spot_exponent;
+	float spot_cutoff_angle;
+	float light_attenuation_factors[4]; // produce this effect only if .w != 0.0f
+} Light_Parameters;
+
+typedef struct _loc_LIGHT_Parameters {
+	GLint light_on;
+	GLint position;
+	GLint ambient_color, diffuse_color, specular_color;
+	GLint spot_direction;
+	GLint spot_exponent;
+	GLint spot_cutoff_angle;
+	GLint light_attenuation_factors;
+} loc_light_Parameters;
+
+typedef struct _loc_Material_Parameters {
+	GLint ambient_color, diffuse_color, specular_color, emissive_color;
+	GLint specular_exponent;
+} loc_Material_Parameters;
+
+#define NUMBER_OF_LIGHT_SUPPORTED 6
+
+loc_Material_Parameters loc_material;
+loc_light_Parameters loc_light[NUMBER_OF_LIGHT_SUPPORTED];
+GLint loc_global_ambient_color;
+
+Light_Parameters light[NUMBER_OF_LIGHT_SUPPORTED];
 #define N_MAX_GEOM_COPIES 5
+
 typedef struct _Object {
 	char filename[512];
 
@@ -117,12 +150,17 @@ void prepare_geom_of_static_object(Object *obj_ptr) {
 	glBindBuffer(GL_ARRAY_BUFFER, obj_ptr->VBO);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
 void define_static_objects(void) {
+
+	glUseProgram(h_ShaderProgram_PS);
+
 	// building
 	strcpy(static_objects[OBJ_BUILDING].filename, "Data/Building1_vnt.geom");
 	static_objects[OBJ_BUILDING].n_fields = 8;
@@ -188,6 +226,8 @@ void define_static_objects(void) {
 
 	static_objects[OBJ_LIGHT].n_geom_instances = 5;
 
+	glUniform4f(loc_global_ambient_color, 0.2f, 0.2f, 0.2f, 1.0f);
+
 	static_objects[OBJ_LIGHT].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(120.0f, 100.0f, 49.0f));
 	static_objects[OBJ_LIGHT].ModelMatrix[0] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[0],
 		90.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -197,6 +237,17 @@ void define_static_objects(void) {
 	static_objects[OBJ_LIGHT].material[0].diffuse = glm::vec4(0.75164f, 0.60648f, 0.22648f, 1.0f);
 	static_objects[OBJ_LIGHT].material[0].specular = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
 	static_objects[OBJ_LIGHT].material[0].exponent = 128.0f*0.4f;
+
+	/* LIGHT 0 : Common light */
+	light[0].light_on = 1;
+	light[0].position[0] = 120.0f; light[0].position[1] = 100.0f; light[0].position[2] = 30.0f; light[0].position[3] = 1.0f;
+	light[0].ambient_color[0] = 0.2f; light[0].ambient_color[1] = 0.2f; light[0].ambient_color[2] = 0.2f; light[0].ambient_color[3] = 1.0f;
+	light[0].diffuse_color[0] = 0.8f; light[0].diffuse_color[1] = 0.8f; light[0].diffuse_color[2] = 0.8f; light[0].diffuse_color[3] = 1.0f;
+	light[0].specular_color[0] = 0.8f; light[0].specular_color[1] = 0.8f; light[0].specular_color[2] = 0.8f; light[0].specular_color[3] = 1.0f;
+	light[0].spot_direction[0] = 0.0f; light[0].spot_direction[1] = 0.0f; light[0].spot_direction[2] = -1.0f;
+	light[0].spot_cutoff_angle = 180.0f;
+	light[0].spot_exponent = 0.0f;
+	light[0].light_attenuation_factors[0] = 1.0f; light[0].light_attenuation_factors[1] = 0.0f; light[0].light_attenuation_factors[2] = 0.0f; light[0].light_attenuation_factors[3] = 0.0f;
 
 	static_objects[OBJ_LIGHT].ModelMatrix[1] = glm::translate(glm::mat4(1.0f), glm::vec3(80.0f, 47.5f, 49.0f));
 	static_objects[OBJ_LIGHT].ModelMatrix[1] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[1],
@@ -208,6 +259,17 @@ void define_static_objects(void) {
 	static_objects[OBJ_LIGHT].material[1].specular = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
 	static_objects[OBJ_LIGHT].material[1].exponent = 128.0f*0.4f;
 
+	/* LIGHT 1 : Red light */
+	light[1].light_on = 1;
+	light[1].position[0] = 75.0f; light[1].position[1] = 47.5f; light[1].position[2] = 30.0f; light[1].position[3] = 1.0f;
+	light[1].ambient_color[0] = 0.2f; light[1].ambient_color[1] = 0.2f; light[1].ambient_color[2] = 0.2f; light[1].ambient_color[3] = 1.0f;
+	light[1].diffuse_color[0] = 0.5f; light[1].diffuse_color[1] = 0.0f; light[1].diffuse_color[2] = 0.0f; light[1].diffuse_color[3] = 1.0f;
+	light[1].specular_color[0] = 0.5f; light[1].specular_color[1] = 0.0f; light[1].specular_color[2] = 0.0f; light[1].specular_color[3] = 1.0f;
+	light[1].spot_direction[0] = 0.0f; light[1].spot_direction[1] = 0.0f; light[1].spot_direction[2] = -1.0f;
+	light[1].spot_cutoff_angle = 90.0f;
+	light[1].spot_exponent = 10.0f;
+	light[1].light_attenuation_factors[0] = 1.0f; light[1].light_attenuation_factors[1] = 0.0f; light[1].light_attenuation_factors[2] = 0.0f; light[1].light_attenuation_factors[3] = 0.0f;
+
 	static_objects[OBJ_LIGHT].ModelMatrix[2] = glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, 130.0f, 49.0f));
 	static_objects[OBJ_LIGHT].ModelMatrix[2] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[2],
 		90.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -217,6 +279,17 @@ void define_static_objects(void) {
 	static_objects[OBJ_LIGHT].material[2].diffuse = glm::vec4(0.75164f, 0.60648f, 0.22648f, 1.0f);
 	static_objects[OBJ_LIGHT].material[2].specular = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
 	static_objects[OBJ_LIGHT].material[2].exponent = 128.0f*0.4f;
+
+	/* LIGHT 2 : Green light */
+	light[2].light_on = 1;
+	light[2].position[0] = 40.0f; light[2].position[1] = 130.0f; light[2].position[2] = 30.0f; light[2].position[3] = 1.0f;
+	light[2].ambient_color[1] = 0.2f; light[2].ambient_color[1] = 0.2f; light[2].ambient_color[2] = 0.2f; light[2].ambient_color[3] = 1.0f;
+	light[2].diffuse_color[1] = 0.0f; light[2].diffuse_color[1] = 0.5f; light[2].diffuse_color[2] = 0.0f; light[2].diffuse_color[3] = 1.0f;
+	light[2].specular_color[1] = 0.0f; light[2].specular_color[1] = 0.5f; light[2].specular_color[1] = 0.0f; light[2].specular_color[3] = 1.0f;
+	light[2].spot_direction[1] = 0.0f; light[2].spot_direction[1] = 0.0f; light[2].spot_direction[2] = -1.0f;
+	light[2].spot_cutoff_angle = 90.0f;
+	light[2].spot_exponent = 10.0f;
+	light[2].light_attenuation_factors[0] = 1.0f; light[2].light_attenuation_factors[1] = 0.0f; light[2].light_attenuation_factors[2] = 0.0f; light[2].light_attenuation_factors[3] = 0.0f;
 
 	static_objects[OBJ_LIGHT].ModelMatrix[3] = glm::translate(glm::mat4(1.0f), glm::vec3(190.0f, 60.0f, 49.0f));
 	static_objects[OBJ_LIGHT].ModelMatrix[3] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[3],
@@ -228,6 +301,17 @@ void define_static_objects(void) {
 	static_objects[OBJ_LIGHT].material[3].specular = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
 	static_objects[OBJ_LIGHT].material[3].exponent = 128.0f*0.4f;
 
+	/* LIGHT 3 : Blue light */
+	light[3].light_on = 1;
+	light[3].position[0] = 190.0f; light[3].position[1] = 60.0f; light[3].position[2] = 40.0f; light[3].position[3] = 1.0f;
+	light[3].ambient_color[1] = 0.2f; light[3].ambient_color[1] = 0.2f; light[3].ambient_color[2] = 0.2f; light[3].ambient_color[3] = 1.0f;
+	light[3].diffuse_color[1] = 0.0f; light[3].diffuse_color[1] = 0.0f; light[3].diffuse_color[2] = 0.5f; light[3].diffuse_color[3] = 1.0f;
+	light[3].specular_color[1] = 0.0f; light[3].specular_color[1] = 0.0f; light[3].specular_color[1] = 0.5f; light[3].specular_color[3] = 1.0f;
+	light[3].spot_direction[1] = 0.0f; light[3].spot_direction[1] = 0.0f; light[3].spot_direction[2] = -1.0f;
+	light[3].spot_cutoff_angle = 90.0f;
+	light[3].spot_exponent = 10.0f;
+	light[3].light_attenuation_factors[0] = 1.0f; light[3].light_attenuation_factors[1] = 0.0f; light[3].light_attenuation_factors[2] = 0.0f; light[3].light_attenuation_factors[3] = 0.0f;
+
 	static_objects[OBJ_LIGHT].ModelMatrix[4] = glm::translate(glm::mat4(1.0f), glm::vec3(210.0f, 112.5f, 49.0));
 	static_objects[OBJ_LIGHT].ModelMatrix[4] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[4],
 		90.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -237,6 +321,17 @@ void define_static_objects(void) {
 	static_objects[OBJ_LIGHT].material[4].diffuse = glm::vec4(0.75164f, 0.60648f, 0.22648f, 1.0f);
 	static_objects[OBJ_LIGHT].material[4].specular = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
 	static_objects[OBJ_LIGHT].material[4].exponent = 128.0f*0.4f;
+
+	/* LIGHT 3 : Special light */
+	light[4].light_on = 1;
+	light[4].position[0] = 210.0f; light[4].position[1] = 112.5f; light[4].position[2] = 40.0f; light[4].position[3] = 1.0f;
+	light[4].ambient_color[1] = 0.2f; light[4].ambient_color[1] = 0.2f; light[4].ambient_color[2] = 0.2f; light[4].ambient_color[3] = 1.0f;
+	light[4].diffuse_color[1] = 0.2f; light[4].diffuse_color[1] = 0.2f; light[4].diffuse_color[2] = 0.2f; light[4].diffuse_color[3] = 1.0f;
+	light[4].specular_color[1] = 0.2f; light[4].specular_color[1] = 0.2f; light[4].specular_color[1] = 0.2f; light[4].specular_color[3] = 1.0f;
+	light[4].spot_direction[1] = 0.0f; light[4].spot_direction[1] = 0.0f; light[4].spot_direction[2] = -1.0f;
+	light[4].spot_cutoff_angle = 180.0f;
+	light[4].spot_exponent = 0.0f;
+	light[4].light_attenuation_factors[0] = 1.0f; light[4].light_attenuation_factors[1] = 0.0f; light[4].light_attenuation_factors[2] = 0.0f; light[4].light_attenuation_factors[3] = 0.0f;
 
 	// teapot
 	strcpy(static_objects[OBJ_TEAPOT].filename, "Data/Teapotn_vn.geom");
@@ -396,14 +491,27 @@ void define_static_objects(void) {
 }
 
 void draw_static_object(Object *obj_ptr, int instance_ID) {
+	glm::mat3 ModelViewMatrixInvTrans;
+
 	glFrontFace(obj_ptr->front_face_mode);
 
 	ModelViewMatrix = ViewMatrix * obj_ptr->ModelMatrix[instance_ID];
 	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	ModelViewMatrixInvTrans = glm::inverse(glm::mat3(ModelViewMatrix));
+	ModelViewMatrixInvTrans = glm::transpose(ModelViewMatrixInvTrans);
 
-	glUniform3f(loc_primitive_color, obj_ptr->material[instance_ID].diffuse.r,
-		obj_ptr->material[instance_ID].diffuse.g, obj_ptr->material[instance_ID].diffuse.b);
+	
+
+	glUniform4f(loc_material.ambient_color, obj_ptr->material[instance_ID].ambient.r, obj_ptr->material[instance_ID].ambient.g, obj_ptr->material[instance_ID].ambient.b, obj_ptr->material[instance_ID].ambient.a);
+	glUniform4f(loc_material.diffuse_color, obj_ptr->material[instance_ID].diffuse.r, obj_ptr->material[instance_ID].diffuse.g, obj_ptr->material[instance_ID].diffuse.b, obj_ptr->material[instance_ID].diffuse.a);
+	glUniform4f(loc_material.specular_color, obj_ptr->material[instance_ID].specular.r, obj_ptr->material[instance_ID].specular.g, obj_ptr->material[instance_ID].specular.b, obj_ptr->material[instance_ID].specular.a);
+	glUniform4f(loc_material.emissive_color, obj_ptr->material[instance_ID].emission.r, obj_ptr->material[instance_ID].emission.g, obj_ptr->material[instance_ID].emission.b, obj_ptr->material[instance_ID].emission.a);
+
+	glUniform3f(loc_primitive_color, obj_ptr->material[instance_ID].diffuse.r, obj_ptr->material[instance_ID].diffuse.g, obj_ptr->material[instance_ID].diffuse.b);
+	
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
 
 	glBindVertexArray(obj_ptr->VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 3 * obj_ptr->n_triangles);
@@ -411,6 +519,7 @@ void draw_static_object(Object *obj_ptr, int instance_ID) {
 }
 
 GLuint VBO_axes, VAO_axes;
+
 GLfloat vertices_axes[6][3] = {
 	{ 0.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },
 	{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f }
@@ -569,6 +678,7 @@ void initialize_tiger_pos() {
 		}
 	}
 }
+
 void define_animated_tiger(void) {
 	for (int i = 0; i < N_TIGER_FRAMES; i++) {
 		sprintf(tiger[i].filename, "Data/Tiger_%d%d_triangles_vnt.geom", i / 10, i % 10);
@@ -597,7 +707,8 @@ const glm::vec3 first_tiger_vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 const glm::vec3 first_tiger_naxis = glm::vec3(0.0f, 1.0f, 0.0f);
 
 void draw_animated_tiger(void) {
-	
+	glm::mat3 ModelViewMatrixInvTrans;
+
  	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(tiger_pos[tiger_data.pos].x, tiger_pos[tiger_data.pos].y, tiger_pos[tiger_data.pos].z));
 	if (tiger_data.direction)
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, tiger_pos[tiger_data.pos].w*TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -606,15 +717,25 @@ void draw_animated_tiger(void) {
 	ModelViewMatrix *= tiger[tiger_data.cur_frame].ModelMatrix[0];
 
 	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	ModelViewMatrixInvTrans = glm::inverse(glm::mat3(ModelViewMatrix));
+	ModelViewMatrixInvTrans = glm::transpose(ModelViewMatrixInvTrans);
 
-	glUniform3f(loc_primitive_color, tiger[tiger_data.cur_frame].material[0].diffuse.r,
-		tiger[tiger_data.cur_frame].material[0].diffuse.g, tiger[tiger_data.cur_frame].material[0].diffuse.b);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+
+	glUniform3f(loc_material.diffuse_color, tiger[tiger_data.cur_frame].material[0].diffuse.r, tiger[tiger_data.cur_frame].material[0].diffuse.g, tiger[tiger_data.cur_frame].material[0].diffuse.b);
+	glUniform3f(loc_material.ambient_color, tiger[tiger_data.cur_frame].material[0].ambient.r, tiger[tiger_data.cur_frame].material[0].ambient.g, tiger[tiger_data.cur_frame].material[0].ambient.b);
+	glUniform3f(loc_material.specular_color, tiger[tiger_data.cur_frame].material[0].specular.r, tiger[tiger_data.cur_frame].material[0].specular.g, tiger[tiger_data.cur_frame].material[0].specular.b);
+	glUniform3f(loc_material.emissive_color, tiger[tiger_data.cur_frame].material[0].emission.r, tiger[tiger_data.cur_frame].material[0].emission.g, tiger[tiger_data.cur_frame].material[0].emission.b);
+
+	glUniform3f(loc_primitive_color, tiger[tiger_data.cur_frame].material[0].diffuse.r, tiger[tiger_data.cur_frame].material[0].diffuse.g, tiger[tiger_data.cur_frame].material[0].diffuse.b);
 
 	glBindVertexArray(tiger[tiger_data.cur_frame].VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 3 * tiger[tiger_data.cur_frame].n_triangles);
 	glBindVertexArray(0);
 
+	glUseProgram(h_ShaderProgram_simple);
 	ModelViewProjectionMatrix = glm::scale(ModelViewProjectionMatrix, glm::vec3(20.0f, 20.0f, 20.0f));
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 	draw_axes();
