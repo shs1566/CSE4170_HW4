@@ -22,7 +22,6 @@ uniform vec4 u_global_ambient_color;
 #define NUMBER_OF_LIGHTS_SUPPORTED 6
 uniform LIGHT u_light[NUMBER_OF_LIGHTS_SUPPORTED];
 uniform MATERIAL u_material;
-uniform bool u_blind_effect;
 uniform float u_ratio;
 
 const float zero_f = 0.0f;
@@ -66,7 +65,12 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 				tmp_float = dot(-L_EC, spot_dir);													// (ºûÀÇ ¹æÇâ º¤ÅÍ) ¿Í (ºû¿¡¼­ Ä«¸Þ¶ó º¤ÅÍ) »çÀÌÀÇ °¢ÀÇ cos °ª
 	
 				if (tmp_float > cos(radians(u_light[i].spot_cutoff_angle))) {
-					tmp_float = pow(tmp_float, u_light[i].spot_exponent);
+
+					if (u_ratio > zero_f) {
+						tmp_float = pow(tmp_float, u_light[i].spot_exponent) * u_ratio * cos(90.0f * u_ratio * acos(tmp_float));
+					}
+					else
+						tmp_float = pow(tmp_float, u_light[i].spot_exponent);
 				}
 				else 
 					tmp_float = zero_f;
@@ -102,4 +106,5 @@ void main(void) {
     //final_color = vec4(0.0f,  0.0f, 1.0 - gl_FragCoord.z/1.0f, 1.0f); // what is this?
 
 	final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
+
 }

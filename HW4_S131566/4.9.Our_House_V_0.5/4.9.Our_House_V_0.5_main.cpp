@@ -6,15 +6,17 @@
 #include <GL/freeglut.h>
 
 #include "Shaders/LoadShaders.h"
-GLuint h_ShaderProgram_simple, h_ShaderProgram_PS, h_ShaderProgram_GS, *h_selected_Shader;		// handle to shader program
+#define SIMPLE_SHADER 0
+#define PHONG_SHADER 1
+#define GOURAUD_SHADER 2
+
+int shader_selected = PHONG_SHADER;
+GLuint h_ShaderProgram_simple, h_ShaderProgram_PS, h_ShaderProgram_GS;		// handle to shader program
 GLint loc_ModelViewProjectionMatrix, loc_primitive_color; // indices of uniform variables
 GLint loc_ModelViewProjectionMatrix_S, loc_ModelViewMatrix_S, loc_ModelViewMatrixInvTrans_S; // uniform variable for shader
 
-int blind_effect = 0;
-GLint loc_blind_effect;
-
-float ratio = 1.0f;
-GLfloat loc_ratio;
+float blind_ratio = 1.0f;
+GLfloat loc_blind_ratio;
 // include glm/*.hpp only if necessary
 //#include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp> //translate, rotate, scale, lookAt, perspective, etc.
@@ -30,17 +32,30 @@ glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
 float WIN_HEIGHT;
 float WIN_WIDTH;
 
+void select_shader(int selected) {
+
+	switch (selected) {
+	case SIMPLE_SHADER:
+		glUseProgram(h_ShaderProgram_simple);
+		break;
+	case PHONG_SHADER:
+		glUseProgram(h_ShaderProgram_PS);
+		break;
+	case GOURAUD_SHADER:
+		glUseProgram(h_ShaderProgram_GS);
+		break;
+	}
+}
 void set_up_scene_light(void) {
 
 	glm::vec4 position_EC;
 	glm::vec3 direction_EC;
 
-	glUseProgram(*h_selected_Shader);
+	select_shader(shader_selected);
 
 	glUniform4f(loc_global_ambient_color, 0.01f, 0.01f, 0.01f, 1.0f);
 
-	glUniform1i(loc_blind_effect, loc_blind_effect);
-	glUniform1f(loc_ratio, ratio);
+	glUniform1f(loc_blind_ratio, blind_ratio);
 
 	light[0].position[0] = 0.0f; light[0].position[1] = 0.0f; light[0].position[2] = -10.0f; light[0].position[3] = 1.0f;	// EC
 	light[0].ambient_color[0] = 0.0f; light[0].ambient_color[1] = 0.0f; light[0].ambient_color[2] = 0.0f; light[0].ambient_color[3] = 1.0f;
@@ -176,7 +191,7 @@ void display(void) {
 		draw_camera(camera_side);
 		glUseProgram(0);
 
-		glUseProgram(*h_selected_Shader);
+		select_shader(shader_selected);
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(car_pos[car_frame].x, car_pos[car_frame].y, car_pos[car_frame].z));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, car_pos[car_frame].w * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(3.0f, 3.0f, 3.0f));
@@ -209,9 +224,9 @@ void display(void) {
 
 		draw_animated_tiger();
 		draw_camera(camera_tiger);
+		glUseProgram(0);
 	}
 	glutSwapBuffers();
-	glUseProgram(0);
 }
 
 void keyboard(unsigned char key, int x, int y) {
@@ -441,11 +456,21 @@ void special(int key, int x, int y) {
 		break;
 
 	case GLUT_KEY_F1:	/* toogle blind effect */
-		blind_effect = 1 - blind_effect;
-		//glUseProgram(h_ShaderProgram_PS);
-		glUniform1i(loc_blind_effect, blind_effect);
-		fprintf(stdout, "blind effect : %s\n", (blind_effect) ? "On" : "Off");
-		//glUseProgram(0);
+		blind_ratio = (blind_ratio > 0.0f) ? 0.0f : 1.0f;
+		glUniform1f(loc_blind_ratio, blind_ratio);
+		fprintf(stdout, "blind effect : %s\n", (blind_ratio > 0.0f) ? "On" : "Off");
+		glutPostRedisplay();
+		break;
+
+	case GLUT_KEY_F2:	/* increase blind effect */
+		blind_ratio += 0.1f;
+		glUniform1f(loc_blind_ratio, blind_ratio);
+		glutPostRedisplay();
+		break;
+
+	case GLUT_KEY_F3:	/* decrease blind effect */
+		blind_ratio -= 0.1f;
+		glUniform1f(loc_blind_ratio, blind_ratio);
 		glutPostRedisplay();
 		break;
 	}
@@ -455,10 +480,10 @@ void mouse(int button, int state, int x, int y) {
 	if (button == GLUT_RIGHT_BUTTON) {
 		int mod = glutGetModifiers();
 		if (state == GLUT_DOWN && mod == GLUT_ACTIVE_SHIFT) {
-				h_selected_Shader = &h_ShaderProgram_GS;
+				shader_selected = GOURAUD_SHADER;
 		}
 		else
-			h_selected_Shader = &h_ShaderProgram_PS;
+			shader_selected = PHONG_SHADER;
 	}
 }
 
@@ -497,36 +522,30 @@ void prepare_shader_program(void) {
 
 	h_ShaderProgram_PS = LoadShaders(shader_info_PS);
 	loc_ModelViewProjectionMatrix_S = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewProjectionMatrix");
-	fprintf(stdout, "ModelViewProjectionMatrix_S : %d\n", loc_ModelViewProjectionMatrix_S);
 	loc_ModelViewMatrix_S = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewMatrix");
-	fprintf(stdout, "ModelViewMatrix_S : %d\n", loc_ModelViewMatrix_S);
 	loc_ModelViewMatrixInvTrans_S = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewMatrixInvTrans");
-	fprintf(stdout, "ModelViewMatrixInvTrans_S : %d\n", loc_ModelViewMatrixInvTrans_S);
 	loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_global_ambient_color");
-	fprintf(stdout, "global_ambient_color : %d\n", loc_global_ambient_color);
-
+	
 	h_ShaderProgram_GS = LoadShaders(shader_info_GS);
 	loc_ModelViewProjectionMatrix_S = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewProjectionMatrix");
 	loc_ModelViewMatrix_S = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewMatrix");
 	loc_ModelViewMatrixInvTrans_S = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewMatrixInvTrans");
 	loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_global_ambient_color");
 
+	loc_blind_ratio = glGetUniformLocation(h_ShaderProgram_PS, "u_ratio");
+
 	for (int i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
 		sprintf(string, "u_light[%d].light_on", i);
 		loc_light[i].light_on = glGetUniformLocation(h_ShaderProgram_PS, string);
-		fprintf(stdout, "loc_light[i].light_on : %d\n", loc_light[i].light_on);
 		loc_light[i].light_on = glGetUniformLocation(h_ShaderProgram_GS, string);
 		sprintf(string, "u_light[%d].position", i);
 		loc_light[i].position = glGetUniformLocation(h_ShaderProgram_PS, string);
-		fprintf(stdout, "loc_light[i].position : %d\n", loc_light[i].position);
 		loc_light[i].position = glGetUniformLocation(h_ShaderProgram_GS, string);
 		sprintf(string, "u_light[%d].ambient_color", i);
 		loc_light[i].ambient_color = glGetUniformLocation(h_ShaderProgram_PS, string);
-		fprintf(stdout, "loc_light[i].ambient_color : %d\n", loc_light[i].ambient_color);
 		loc_light[i].ambient_color = glGetUniformLocation(h_ShaderProgram_GS, string);
 		sprintf(string, "u_light[%d].diffuse_color", i);
 		loc_light[i].diffuse_color = glGetUniformLocation(h_ShaderProgram_PS, string);
-		fprintf(stdout, "loc_light[i].diffuse_color : %d\n", loc_light[i].diffuse_color);
 		loc_light[i].diffuse_color = glGetUniformLocation(h_ShaderProgram_GS, string);
 		sprintf(string, "u_light[%d].specular_color", i);
 		loc_light[i].specular_color = glGetUniformLocation(h_ShaderProgram_PS, string);
@@ -559,11 +578,6 @@ void prepare_shader_program(void) {
 
 	loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_PS, "u_material.specular_exponent");
 	loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_exponent");
-
-	loc_blind_effect = glGetUniformLocation(h_ShaderProgram_PS, "u_blind_effect");
-	fprintf(stdout, "loc_blind_effect : %d\n", loc_blind_effect);
-	loc_ratio = glGetUniformLocation(h_ShaderProgram_PS, "u_ratio");
-	fprintf(stdout, "loc_ratio : %d\n", loc_ratio);
 }
 
 void initialize_camera(void) {
@@ -684,7 +698,7 @@ void initialize_OpenGL(void) {
 	selected = &camera_world;
 	initialize_camera();
 
-	h_selected_Shader = &h_ShaderProgram_PS;
+	select_shader(shader_selected);
 	ProjectionMatrix = glm::perspective(selected->fov_y*TO_RADIAN, selected->aspect_ratio, selected->near_clip, selected->far_clip);
 	ModelViewMatrix = ProjectionMatrix * ViewMatrix;
 }

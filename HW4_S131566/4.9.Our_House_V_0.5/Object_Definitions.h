@@ -159,8 +159,6 @@ void prepare_geom_of_static_object(Object *obj_ptr) {
 
 void define_static_objects(void) {
 
-	glUseProgram(*h_selected_Shader);
-
 	// building
 	strcpy(static_objects[OBJ_BUILDING].filename, "Data/Building1_vnt.geom");
 	static_objects[OBJ_BUILDING].n_fields = 8;
@@ -487,8 +485,6 @@ void define_static_objects(void) {
 	static_objects[OBJ_COW].material[1].exponent = 0.21794872f*0.6f;
 
 	n_static_objects = 8;
-
-	glUseProgram(0);
 }
 
 void draw_static_object(Object *obj_ptr, int instance_ID) {
