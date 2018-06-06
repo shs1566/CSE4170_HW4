@@ -128,6 +128,8 @@ void party_light(void) {
 	light[0].spot_cutoff_angle = 180.0f;
 	light[0].light_attenuation_factors[0] = 1.0f; light[0].light_attenuation_factors[1] = 0.0f; light[0].light_attenuation_factors[2] = 0.0f; light[0].light_attenuation_factors[3] = 1.0f;
 
+	glm::vec3 direction;
+
 	glUniform1i(loc_light[0].light_on, light[0].light_on);
 	glUniform4fv(loc_light[0].position, 1, light[0].position);
 	glUniform4fv(loc_light[0].ambient_color, 1, light[0].ambient_color);
@@ -142,7 +144,7 @@ void party_light(void) {
 
 		if (i == 1) continue;
 		position_EC = ViewMatrix * glm::vec4(light[i].position[0], light[i].position[1], light[i].position[2], light[i].position[3]);
-		direction_EC = glm::mat3(ViewMatrix) * glm::vec3(light[i].spot_direction[0], light[i].spot_direction[1], light[i].spot_direction[2]);
+		direction_EC;
 		float ambient_color[4], diffuse_color[4], specular_color[4];
 
 		ambient_color[0] = rand(); ambient_color[1] = rand() * 0.3; ambient_color[2] = rand() * 0.3; ambient_color[3] = 1.0f;
@@ -162,6 +164,8 @@ void party_light(void) {
 		diffuse_color[0] = diffuse_color[0] * 0.5; diffuse_color[1] = diffuse_color[1] * 0.5; diffuse_color[2] = diffuse_color[2] * 0.5; diffuse_color[3] = 1.0f;
 		specular_color[0] = specular_color[0] * 0.5; specular_color[1] = specular_color[1] * 0.5; specular_color[2] = specular_color[2] * 0.5; specular_color[3] = 1.0f;
 
+		direction.x = (rand() % 2) ? -1 : 1; direction.y = (rand() % 2) ? -1 : 1; direction.z = -1;
+		direction_EC = glm::mat3(ViewMatrix) * direction;
 		light[i].light_on =1- light[i].light_on;
 		glUniform1i(loc_light[i].light_on, light[i].light_on);
 		glUniform4fv(loc_light[i].position, 1, &position_EC[0]);
