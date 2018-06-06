@@ -19,15 +19,18 @@ struct MATERIAL {
 };
 
 uniform vec4 u_global_ambient_color;
-#define NUMBER_OF_LIGHTS_SUPPORTED 5
+#define NUMBER_OF_LIGHTS_SUPPORTED 6
 uniform LIGHT u_light[NUMBER_OF_LIGHTS_SUPPORTED];
 uniform MATERIAL u_material;
+uniform bool u_blind_effect;
+uniform float u_ratio;
 
 const float zero_f = 0.0f;
 const float one_f = 1.0f;
 
 in vec3 v_position_EC;
 in vec3 v_normal_EC;
+
 layout (location = 0) out vec4 final_color;
 
 vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
@@ -60,8 +63,9 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 				float spot_cutoff_angle = clamp(u_light[i].spot_cutoff_angle, zero_f, 90.0f);
 				vec3 spot_dir = normalize(u_light[i].spot_direction);
 
-				tmp_float = dot(-L_EC, spot_dir);
-				if (tmp_float >= cos(radians(spot_cutoff_angle))) {
+				tmp_float = dot(-L_EC, spot_dir);													// (ºûÀÇ ¹æÇâ º¤ÅÍ) ¿Í (ºû¿¡¼­ Ä«¸Þ¶ó º¤ÅÍ) »çÀÌÀÇ °¢ÀÇ cos °ª
+	
+				if (tmp_float > cos(radians(u_light[i].spot_cutoff_angle))) {
 					tmp_float = pow(tmp_float, u_light[i].spot_exponent);
 				}
 				else 
@@ -76,26 +80,26 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 		if (local_scale_factor > zero_f) {				
 			vec4 local_color_sum = u_light[i].ambient_color * u_material.ambient_color;
 
-			tmp_float = dot(N_EC, L_EC);
-			if (tmp_float > zero_f) {
-				local_color_sum += u_light[i].diffuse_color*u_material.diffuse_color*tmp_float;
+			tmp_float = max(zero_f, dot(N_EC, L_EC));  
+			local_color_sum += u_light[i].diffuse_color*u_material.diffuse_color*tmp_float;
 			
-				vec3 H_EC = normalize(L_EC - normalize(P_EC));
-				tmp_float = dot(N_EC, H_EC); 
-				if (tmp_float > zero_f) {
-					local_color_sum += u_light[i].specular_color
-										   *u_material.specular_color*pow(tmp_float, u_material.specular_exponent);
-				}
+			vec3 H_EC = normalize(L_EC - normalize(P_EC));
+			tmp_float = max(zero_f, dot(N_EC, H_EC)); 
+			if (tmp_float > zero_f) {
+				local_color_sum += u_light[i].specular_color
+				                       *u_material.specular_color*pow(tmp_float, u_material.specular_exponent);
 			}
 			color_sum += local_scale_factor*local_color_sum;
 		}
 	}
+
  	return color_sum;
 }
 
-void main(void) {   
-	// final_color = vec4(gl_FragCoord.x/800.0f, gl_FragCoord.y/800.0f, 0.0f, 1.0f); // what is this?
-    // final_color = vec4(0.0f,  0.0f, 1.0 - gl_FragCoord.z/1.0f, 1.0f); // what is this?
 
-   final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
+void main(void) {   
+	//final_color = vec4(gl_FragCoord.x/800.0f, gl_FragCoord.y/800.0f, 0.0f, 1.0f); // what is this?
+    //final_color = vec4(0.0f,  0.0f, 1.0 - gl_FragCoord.z/1.0f, 1.0f); // what is this?
+
+	final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
 }
