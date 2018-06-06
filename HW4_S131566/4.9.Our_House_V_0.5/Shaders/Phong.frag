@@ -23,12 +23,14 @@ uniform vec4 u_global_ambient_color;
 uniform LIGHT u_light[NUMBER_OF_LIGHTS_SUPPORTED];
 uniform MATERIAL u_material;
 uniform float u_ratio;
+uniform float u_screen;
 
 const float zero_f = 0.0f;
 const float one_f = 1.0f;
 
 in vec3 v_position_EC;
 in vec3 v_normal_EC;
+in vec3 s_position;
 
 layout (location = 0) out vec4 final_color;
 
@@ -105,6 +107,19 @@ void main(void) {
 	//final_color = vec4(gl_FragCoord.x/800.0f, gl_FragCoord.y/800.0f, 0.0f, 1.0f); // what is this?
     //final_color = vec4(0.0f,  0.0f, 1.0 - gl_FragCoord.z/1.0f, 1.0f); // what is this?
 
+	int temp = 4;
+
 	final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
 
+	
+	if(u_screen > zero_f) {
+		for(int i=0 ; i<u_screen ; i++) {
+			if(s_position.x > (1.0 + i*2.0) / (u_screen*2 + 1.0) && s_position.x < (2.0+ i*2.0) / (u_screen*2 + 1.0)) {
+				for(int j=0 ; j<u_screen ; j++) {
+					if(s_position.y > (1.0+ j*2.0) / (u_screen*2.0 + 1.0) && s_position.y < (2.0 + j*2.0) / (u_screen*2.0 + 1.0))
+						discard;
+				}
+			}
+		}
+	}
 }

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
@@ -14,9 +15,14 @@ int shader_selected = PHONG_SHADER;
 GLuint h_ShaderProgram_simple, h_ShaderProgram_PS, h_ShaderProgram_GS;		// handle to shader program
 GLint loc_ModelViewProjectionMatrix, loc_primitive_color; // indices of uniform variables
 GLint loc_ModelViewProjectionMatrix_S, loc_ModelViewMatrix_S, loc_ModelViewMatrixInvTrans_S; // uniform variable for shader
-
-float blind_ratio = 1.0f;
+  
+float blind_ratio = 0.0f;
 GLfloat loc_blind_ratio;
+
+float screen_density = 0.0f; // when this variable is minus, it means screen is off
+GLfloat loc_screen_density;
+bool screen_flag = false;
+
 // include glm/*.hpp only if necessary
 //#include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp> //translate, rotate, scale, lookAt, perspective, etc.
@@ -32,6 +38,8 @@ glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
 float WIN_HEIGHT;
 float WIN_WIDTH;
 
+bool party_flag = false;
+
 void select_shader(int selected) {
 
 	switch (selected) {
@@ -46,6 +54,7 @@ void select_shader(int selected) {
 		break;
 	}
 }
+
 void set_up_scene_light(void) {
 
 	glm::vec4 position_EC;
@@ -56,6 +65,7 @@ void set_up_scene_light(void) {
 	glUniform4f(loc_global_ambient_color, 0.01f, 0.01f, 0.01f, 1.0f);
 
 	glUniform1f(loc_blind_ratio, blind_ratio);
+	glUniform1f(loc_screen_density, screen_density);
 
 	light[0].position[0] = 0.0f; light[0].position[1] = 0.0f; light[0].position[2] = -10.0f; light[0].position[3] = 1.0f;	// EC
 	light[0].ambient_color[0] = 0.0f; light[0].ambient_color[1] = 0.0f; light[0].ambient_color[2] = 0.0f; light[0].ambient_color[3] = 1.0f;
@@ -87,6 +97,79 @@ void set_up_scene_light(void) {
 		glUniform4fv(loc_light[i].specular_color, 1, light[i].specular_color);
 		glUniform3fv(loc_light[i].spot_direction, 1, &direction_EC[0]);
 		glUniform1f(loc_light[i].spot_cutoff_angle, light[i].spot_cutoff_angle);
+		glUniform1f(loc_light[i].spot_exponent, light[i].spot_exponent);
+		glUniform4fv(loc_light[i].light_attenuation_factors, 1, light[i].light_attenuation_factors);
+	}
+
+	glUseProgram(0);
+}
+
+void party_light(void) {
+
+	srand(time(NULL));
+
+	glm::vec4 position_EC;
+	glm::vec3 direction_EC;
+
+	select_shader(shader_selected);
+
+	glUniform4f(loc_global_ambient_color, 0.01f, 0.01f, 0.01f, 1.0f);
+
+	glUniform1f(loc_blind_ratio, blind_ratio);
+	glUniform1f(loc_screen_density, screen_density);
+
+	/* camera light */
+	light[0].position[0] = 0.0f; light[0].position[1] = 0.0f; light[0].position[2] = -10.0f; light[0].position[3] = 1.0f;	// EC
+	light[0].ambient_color[0] = 0.0f; light[0].ambient_color[1] = 0.0f; light[0].ambient_color[2] = 0.0f; light[0].ambient_color[3] = 1.0f;
+	light[0].diffuse_color[0] = 0.3f; light[0].diffuse_color[1] = 0.3f; light[0].diffuse_color[2] = 0.3f; light[0].diffuse_color[3] = 1.0f;
+	light[0].specular_color[0] = 0.3f; light[0].specular_color[1] = 0.3f; light[0].specular_color[2] = 0.3f; light[0].specular_color[3] = 1.0f;
+	light[0].spot_direction[0] = 0.0f; light[0].spot_direction[1] = 0.0f; light[0].spot_direction[2] = -1.0f;
+	light[0].spot_exponent = 10.0f;
+	light[0].spot_cutoff_angle = 180.0f;
+	light[0].light_attenuation_factors[0] = 1.0f; light[0].light_attenuation_factors[1] = 0.0f; light[0].light_attenuation_factors[2] = 0.0f; light[0].light_attenuation_factors[3] = 1.0f;
+
+	glUniform1i(loc_light[0].light_on, light[0].light_on);
+	glUniform4fv(loc_light[0].position, 1, light[0].position);
+	glUniform4fv(loc_light[0].ambient_color, 1, light[0].ambient_color);
+	glUniform4fv(loc_light[0].diffuse_color, 1, light[0].diffuse_color);
+	glUniform4fv(loc_light[0].specular_color, 1, light[0].specular_color);
+	glUniform3fv(loc_light[0].spot_direction, 1, light[0].spot_direction);
+	glUniform1f(loc_light[0].spot_cutoff_angle, light[0].spot_cutoff_angle);
+	glUniform1f(loc_light[0].spot_exponent, light[0].spot_exponent);
+	glUniform4fv(loc_light[0].light_attenuation_factors, 1, light[0].light_attenuation_factors);
+
+	for (int i = 1; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+
+		if (i == 1) continue;
+		position_EC = ViewMatrix * glm::vec4(light[i].position[0], light[i].position[1], light[i].position[2], light[i].position[3]);
+		direction_EC = glm::mat3(ViewMatrix) * glm::vec3(light[i].spot_direction[0], light[i].spot_direction[1], light[i].spot_direction[2]);
+		float ambient_color[4], diffuse_color[4], specular_color[4];
+
+		ambient_color[0] = rand(); ambient_color[1] = rand() * 0.3; ambient_color[2] = rand() * 0.3; ambient_color[3] = 1.0f;
+		diffuse_color[0] = rand() * 0.5; diffuse_color[1] = rand() * 0.5; diffuse_color[2] = rand() * 0.5; diffuse_color[3] = 1.0f;
+		specular_color[0] = rand() * 0.5; specular_color[1] = rand() * 0.5; specular_color[2] = rand() * 0.5; specular_color[3] = 1.0f;
+		
+		double sum = ambient_color[0] + ambient_color[1] + ambient_color[2];
+		ambient_color[0] /= sum; ambient_color[1] /= sum; ambient_color[2] /= sum;
+
+		sum = diffuse_color[0] + diffuse_color[1] + diffuse_color[2];
+		diffuse_color[0] /= sum; diffuse_color[1] /= sum; diffuse_color[2] /= sum;
+
+		sum = specular_color[0] + specular_color[1] + specular_color[2];
+		specular_color[0] /= sum; specular_color[1] /= sum; ambient_color[2] /= sum;
+
+		ambient_color[0] = ambient_color[0] * 0.1; ambient_color[1] = ambient_color[1] * 0.1; ambient_color[2] = ambient_color[2] * 0.1; ambient_color[3] = 1.0f;
+		diffuse_color[0] = diffuse_color[0] * 0.5; diffuse_color[1] = diffuse_color[1] * 0.5; diffuse_color[2] = diffuse_color[2] * 0.5; diffuse_color[3] = 1.0f;
+		specular_color[0] = specular_color[0] * 0.5; specular_color[1] = specular_color[1] * 0.5; specular_color[2] = specular_color[2] * 0.5; specular_color[3] = 1.0f;
+
+		light[i].light_on =1- light[i].light_on;
+		glUniform1i(loc_light[i].light_on, light[i].light_on);
+		glUniform4fv(loc_light[i].position, 1, &position_EC[0]);
+		glUniform4fv(loc_light[i].ambient_color, 1, ambient_color);
+		glUniform4fv(loc_light[i].diffuse_color, 1, diffuse_color);
+		glUniform4fv(loc_light[i].specular_color, 1, specular_color); 
+		glUniform3fv(loc_light[i].spot_direction, 1, &direction_EC[0]);
+		glUniform1f(loc_light[i].spot_cutoff_angle, 120.0f);
 		glUniform1f(loc_light[i].spot_exponent, light[i].spot_exponent);
 		glUniform4fv(loc_light[i].light_attenuation_factors, 1, light[i].light_attenuation_factors);
 	}
@@ -135,6 +218,7 @@ void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	CAMERA *temp = selected;
+	glm::mat3 ModelViewMatrixInvTrans;
 
 	for (int i = 0; i < 4; i++) {
 		switch (i) {
@@ -166,6 +250,10 @@ void display(void) {
 
 		set_up_scene_light();
 
+		if (party_flag) {
+			party_light();
+		}
+
 		/* Draw world coordinate */
 		glUseProgram(h_ShaderProgram_simple);
 		ModelViewMatrix = glm::scale(ViewMatrix, glm::vec3(WC_AXIS_LENGTH, WC_AXIS_LENGTH, WC_AXIS_LENGTH));
@@ -192,12 +280,36 @@ void display(void) {
 		glUseProgram(0);
 
 		select_shader(shader_selected);
+
+		if (screen_flag) {
+			set_screen();
+			set_material_screen();
+
+
+			ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(190.0f, 100.0f, 40.0f));
+			ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(30.0f, 30.0f, 30.0f));
+			ModelViewMatrix = glm::rotate(ModelViewMatrix, 0.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+			ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+			ModelViewMatrixInvTrans = glm::inverse(glm::mat3(ModelViewMatrix));
+			ModelViewMatrixInvTrans = glm::transpose(ModelViewMatrixInvTrans);
+
+			glUniformMatrix4fv(loc_ModelViewProjectionMatrix_S, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+			glUniformMatrix4fv(loc_ModelViewMatrix_S, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+			glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_S, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+			draw_screen();
+		}
+
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(car_pos[car_frame].x, car_pos[car_frame].y, car_pos[car_frame].z));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, car_pos[car_frame].w * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
-		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(3.0f, 3.0f, 3.0f));
+		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, 90*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
 		ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+		ModelViewMatrixInvTrans = glm::inverse(glm::mat3(ModelViewMatrix));
+		ModelViewMatrixInvTrans = glm::transpose(ModelViewMatrixInvTrans);
+
 		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_S, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewMatrix_S, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_S, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
 		draw_car_dummy();
 
 		draw_static_object(&(static_objects[OBJ_BUILDING]), 0);
@@ -224,6 +336,7 @@ void display(void) {
 
 		draw_animated_tiger();
 		draw_camera(camera_tiger);
+
 		glUseProgram(0);
 	}
 	glutSwapBuffers();
@@ -413,10 +526,14 @@ void timer_scene(int timestamp_scene) {
 	}
 
 	car_frame++;
-	if (car_frame>=N_CAR_FRAME)
+	if (car_frame>N_CAR_FRAME)
 		car_frame = 0;
-	wheel_rotate -= 5.0f;
+	wheel_rotate -= 10.0f;
 
+	if (party_flag) {
+		party_light();
+		blind_ratio = (blind_ratio >= 1) ? rand() % 3 + 1 : 1.0f;
+	}
 	glutPostRedisplay();
 	glutTimerFunc(50, timer_scene, (timestamp_scene + 1) % INT_MAX);
 }
@@ -424,17 +541,17 @@ void timer_scene(int timestamp_scene) {
 void special(int key, int x, int y) {
 
 	switch (key) {
-	
+
 	case GLUT_KEY_LEFT:	/* camera move -uaxis */
 		camera_world.pos -= CAM_TRANSLATION_SPEED * camera_world.uaxis;
 		glutPostRedisplay();
 		break;
-		
+
 	case GLUT_KEY_RIGHT: /* camera move +uaxis */
 		camera_world.pos += CAM_TRANSLATION_SPEED * camera_world.uaxis;
 		glutPostRedisplay();
 		break;
-		
+
 	case GLUT_KEY_UP: /* camera move +vaxis */
 		camera_world.pos += CAM_TRANSLATION_SPEED * camera_world.vaxis;
 		glutPostRedisplay();
@@ -471,6 +588,34 @@ void special(int key, int x, int y) {
 	case GLUT_KEY_F3:	/* decrease blind effect */
 		blind_ratio -= 0.1f;
 		glUniform1f(loc_blind_ratio, blind_ratio);
+		glutPostRedisplay();
+		break;
+
+	case GLUT_KEY_F4:
+		party_flag = 1 - party_flag;
+		fprintf(stdout, "party effect : %s\n", (party_flag) ? "On" : "Off");
+		if (!party_flag) {
+			define_static_objects();
+			set_up_scene_light();
+			blind_ratio = 0.0f;
+		}
+		glutPostRedisplay();
+		break;
+
+	case GLUT_KEY_F5:
+		screen_flag = 1 - screen_flag;
+		glutPostRedisplay();
+		break;
+
+	case GLUT_KEY_F6:
+		if (screen_flag)
+			screen_density += 1;
+		glutPostRedisplay();
+		break;
+
+	case GLUT_KEY_F7:
+		if (screen_flag)
+			screen_density = (screen_density <= 0) ? 0 : screen_density -1;
 		glutPostRedisplay();
 		break;
 	}
@@ -533,6 +678,7 @@ void prepare_shader_program(void) {
 	loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_global_ambient_color");
 
 	loc_blind_ratio = glGetUniformLocation(h_ShaderProgram_PS, "u_ratio");
+	loc_screen_density = glGetUniformLocation(h_ShaderProgram_PS, "u_screen");
 
 	for (int i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
 		sprintf(string, "u_light[%d].light_on", i);
@@ -693,6 +839,8 @@ void initialize_OpenGL(void) {
 	glEnable(GL_DEPTH_TEST); // Default state
 	glEnable(GL_MULTISAMPLE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
 	selected = &camera_world;
@@ -708,6 +856,7 @@ void prepare_scene(void) {
 	define_static_objects();
 	define_animated_tiger();
 	define_volume();
+	prepare_screen();
 	prepare_geom_obj2(GEOM_OBJ_ID_CAR_BODY, "Data/car_body_triangles_v.txt", GEOM_OBJ_TYPE_V);
 	prepare_geom_obj2(GEOM_OBJ_ID_CAR_WHEEL, "Data/car_wheel_triangles_v.txt", GEOM_OBJ_TYPE_V);
 	prepare_geom_obj2(GEOM_OBJ_ID_CAR_NUT, "Data/car_nut_triangles_v.txt", GEOM_OBJ_TYPE_V);
