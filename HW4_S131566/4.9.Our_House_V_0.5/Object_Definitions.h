@@ -243,7 +243,7 @@ void define_static_objects(void) {
 	light[1].light_on = 1;
 	light[1].position[0] = 120.0f; light[1].position[1] = 100.0f; light[1].position[2] = 75.0f; light[1].position[3] = 1.0f;
 	light[1].ambient_color[0] = 0.1f; light[1].ambient_color[1] = 0.1f; light[1].ambient_color[2] = 0.1f; light[1].ambient_color[3] = 1.0f;
-	light[1].diffuse_color[0] = 0.2f; light[1].diffuse_color[1] = 0.2f; light[1].diffuse_color[2] = 0.2f; light[1].diffuse_color[3] = 1.0f;
+	light[1].diffuse_color[0] = 0.5f; light[1].diffuse_color[1] = 0.5f; light[1].diffuse_color[2] = 0.5f; light[1].diffuse_color[3] = 1.0f;
 	light[1].specular_color[0] = 0.2f; light[1].specular_color[1] = 0.2f; light[1].specular_color[2] = 0.2f; light[1].specular_color[3] = 1.0f;
 	light[1].spot_direction[0] = 0.0f; light[1].spot_direction[1] = 0.0f; light[1].spot_direction[2] = -1.0f;
 	light[1].spot_cutoff_angle = 180.0f;
@@ -372,7 +372,7 @@ void define_static_objects(void) {
 
 	static_objects[OBJ_NEW_CHAIR].n_geom_instances = 2;
 
-	static_objects[OBJ_NEW_CHAIR].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 104.0f, 0.0f));
+	static_objects[OBJ_NEW_CHAIR].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 110.0f, 0.0f));
 	static_objects[OBJ_NEW_CHAIR].ModelMatrix[0] = glm::scale(static_objects[OBJ_NEW_CHAIR].ModelMatrix[0],
 		glm::vec3(0.8f, 0.8f, 0.8f));
 	static_objects[OBJ_NEW_CHAIR].ModelMatrix[0] = glm::rotate(static_objects[OBJ_NEW_CHAIR].ModelMatrix[0],
@@ -879,11 +879,11 @@ void set_car() {
 	material_car.exponent = 100.0f;
 	material_car.emission = glm::vec4(1.0f, 0.498f, 0.831f, 1.0f);
 
-	material_wheel.ambient = glm::vec4(0.690f, 0.769f, 0.871f, 1.0f);
-	material_wheel.diffuse = glm::vec4(0.690f, 0.769f, 0.871f, 1.0f);
-	material_wheel.specular = glm::vec4(0.690f, 0.769f, 0.871f, 1.0f);
+	material_wheel.ambient = glm::vec4(0.1745f, 0.01175f, 0.01175f, 1.0f);
+	material_wheel.diffuse = glm::vec4(0.61424f, 0.04136f, 0.04136f, 1.0f);
+	material_wheel.specular = glm::vec4(0.727811f, 0.626959f, 0.626959f, 1.0f);
 	material_wheel.exponent = 100.0f;
-	material_wheel.emission = glm::vec4(0.690f, 0.769f, 0.871f, 1.0f);
+	material_wheel.emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	
 	material_nut.ambient = glm::vec4(0.690f, 0.769f, 0.871f, 1.0f);
 	material_nut.diffuse = glm::vec4(0.690f, 0.769f, 0.871f, 1.0f);
@@ -1022,7 +1022,7 @@ void draw_geom_obj(int geom_obj_ID) {
 int car_frame = 0;
 float wheel_rotate = 0.0f;
 
-#define N_CAR_FRAME 197
+#define N_CAR_FRAME 201
 
 void initialize_car_pos() {
 	float x_pos = 202.0f;
@@ -1031,7 +1031,7 @@ void initialize_car_pos() {
 	float angle = 90.0f;
 	int cnt = 0;
 
-	for (int i = 0; i < 21; i ++) {
+	for (int i = 0; i < 24; i ++) {
 		car_pos[cnt++] = glm::vec4(x_pos, y_pos+=2, z_pos, angle);
 	}
 
@@ -1073,7 +1073,7 @@ void initialize_car_pos() {
 		angle -= 6.0f;
 	}
 
-	for (int i = 0; i < 21; i++) {
+	for (int i = 0; i < 24; i++) {
 		car_pos[cnt++] = glm::vec4(x_pos, y_pos -= 2, z_pos, angle);
 	}
 }
