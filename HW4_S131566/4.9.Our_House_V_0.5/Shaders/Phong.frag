@@ -103,13 +103,7 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 }
 
 
-void main(void) {   
-	//final_color = vec4(gl_FragCoord.x/800.0f, gl_FragCoord.y/800.0f, 0.0f, 1.0f); // what is this?
-    //final_color = vec4(0.0f,  0.0f, 1.0 - gl_FragCoord.z/1.0f, 1.0f); // what is this?
-
-	int temp = 4;
-
-	final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
+void main(void) {  
 
 	
 	if(u_screen > zero_f) {
@@ -122,4 +116,7 @@ void main(void) {
 			}
 		}
 	}
+
+	final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
+
 }
